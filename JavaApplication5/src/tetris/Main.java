@@ -3,14 +3,15 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package tetris;
+package tetris3;
 
-
-import java.awt.Graphics;
 import java.awt.Color;
+import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.Random;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
@@ -19,24 +20,22 @@ import javax.swing.Timer;
  * @author diana
  */
 public class Main extends javax.swing.JFrame {
-
-    public int score;
-    public int highscore;
-    public int[][] field;
+    public Random r = new Random();
+    public Field field;
+    public int scale = 60;
     public String piecetypes = "OLJITSZ";
     public Color[] colors = {Color.BLACK, Color.RED, Color.ORANGE, Color.YELLOW, Color.PINK, Color.GREEN, Color.BLUE, Color.MAGENTA};
-    public int scale = 60;
-    public int[] testpos = new int[]{4, -1};
-    
-    public Field testfield = new Field(10, 17);
-    
-    public Tetromino mytest = new Tetromino("T", testpos, scale);
-    
+    public int ticks = 0;
+    public Tetromino currentpiece = new Tetromino(randomPiece(piecetypes), 4, 0, scale);
+    public Tetromino nextpiece = new Tetromino(randomPiece(piecetypes), 4, 0, scale);
+
     public Timer clock = new Timer(100, new ActionListener() {
         
         public void actionPerformed(ActionEvent e) {
             tick();
             playfield.repaint();
+            scorelabel.repaint();
+            nextpanel.repaint();
         }
     });
     
@@ -44,34 +43,61 @@ public class Main extends javax.swing.JFrame {
         @Override
         public void paint(Graphics g) {
             super.paint(g);
-            testfield.paint(g);
-            mytest.paint(g);
+            field.paintField(g);
+            currentpiece.paint(g);
+        }
+    }
+    
+    public class MyPanel2 extends JPanel {
+        @Override
+        public void paint(Graphics g) {
+            super.paint(g);
+            nextpiece.nextpaint(g);
         }
     }
     
     public void tick() {
-        mytest.fall(testfield);
-        if (mytest.position[1] > testfield.height) {
-            merge(mytest, testfield);
-            mytest.position[1] = -1;
+        ticks += 1;
+        if (ticks % 10 == 0) {
+            counter(scorelabel);
+        }
+        if (ticks % 20 == 0) {
+            if (currentpiece.CheckCollision(field)) {
+                merge(currentpiece, field);
+                currentpiece = nextpiece;
+                nextpiece = new Tetromino(randomPiece(piecetypes), 4, 0, scale);
+                
+            }
+            field.checkAL(field.matrix);
         }
     }
+    
+    public void counter(JLabel l) {
+        l.setText("score: " + ticks/10);
+    }
+    
+    public String randomPiece(String s) {
+        int ind = r.nextInt(s.length());
+        String ns = "" + s.charAt(ind);
+        return ns;
+    }
+
     
     public void merge(Tetromino t, Field f) {
         for (int i = 0; i < t.matrix.length; i++) {
-            for (int j = 0; j < t.matrix.length; j++) {
-                f.field[t.position[0] + i][t.position[1] + j] = t.matrix[i][j];
+            for (int j = 0; j < t.matrix[i].length; j++) {
+                if (t.matrix[i][j] > 0) {
+                f.matrix.get(i + t.y)[j + t.x] = t.matrix[i][j];
+                }
             }
         }
-        System.out.println(f);
     }
-    
-    
     /**
-     * Creates new form tetris
+     * Creates new form Main
      */
     public Main() {
         initComponents();
+        field = new Field(10, 20, scale);
         clock.start();
     }
 
@@ -85,16 +111,17 @@ public class Main extends javax.swing.JFrame {
     private void initComponents() {
 
         playfield = new MyPanel();
-        titlelabel = new javax.swing.JLabel();
-        playbutton = new javax.swing.JButton();
-        highscorelabel = new javax.swing.JLabel();
-        newgamebutton = new javax.swing.JButton();
-        nextlabel = new javax.swing.JLabel();
-        piecepreview = new javax.swing.JPanel();
+        tetrislabel = new javax.swing.JLabel();
+        newgamebutton = new java.awt.Button();
         scorelabel = new javax.swing.JLabel();
+        leftbutton = new javax.swing.JButton();
+        rightbutton = new javax.swing.JButton();
+        rotatebutton = new javax.swing.JButton();
+        dropbutton = new javax.swing.JButton();
+        newpiecebutton = new javax.swing.JButton();
+        nextpanel = new MyPanel2();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setPreferredSize(new java.awt.Dimension(1200, 1400));
 
         playfield.setBackground(new java.awt.Color(0, 0, 0));
         playfield.setPreferredSize(new java.awt.Dimension(600, 1200));
@@ -103,95 +130,170 @@ public class Main extends javax.swing.JFrame {
         playfield.setLayout(playfieldLayout);
         playfieldLayout.setHorizontalGroup(
             playfieldLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 600, Short.MAX_VALUE)
+            .addGap(0, 0, Short.MAX_VALUE)
         );
         playfieldLayout.setVerticalGroup(
             playfieldLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGap(0, 1200, Short.MAX_VALUE)
         );
 
-        titlelabel.setFont(new java.awt.Font("Tahoma", 0, 48)); // NOI18N
-        titlelabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        titlelabel.setText("TETRIS");
-        titlelabel.setToolTipText("");
+        tetrislabel.setFont(new java.awt.Font("Tahoma", 0, 48)); // NOI18N
+        tetrislabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        tetrislabel.setText("TETRIS");
 
-        playbutton.setFont(new java.awt.Font("Tahoma", 0, 24)); // NOI18N
-        playbutton.setText("Play");
-        playbutton.setPreferredSize(new java.awt.Dimension(100, 50));
+        newgamebutton.setFont(new java.awt.Font("Dialog", 0, 36)); // NOI18N
+        newgamebutton.setLabel("New Game");
+        newgamebutton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                newgamebuttonActionPerformed(evt);
+            }
+        });
 
-        highscorelabel.setFont(new java.awt.Font("Tahoma", 0, 24)); // NOI18N
-        highscorelabel.setText("High score: 0");
+        leftbutton.setText("left");
+        leftbutton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                leftbuttonActionPerformed(evt);
+            }
+        });
 
-        newgamebutton.setFont(new java.awt.Font("Tahoma", 0, 24)); // NOI18N
-        newgamebutton.setText("New Game");
-        newgamebutton.setPreferredSize(new java.awt.Dimension(200, 60));
+        rightbutton.setText("right");
+        rightbutton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                rightbuttonActionPerformed(evt);
+            }
+        });
 
-        nextlabel.setFont(new java.awt.Font("Tahoma", 0, 24)); // NOI18N
-        nextlabel.setText("Next: ");
+        rotatebutton.setText("rotate");
+        rotatebutton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                rotatebuttonActionPerformed(evt);
+            }
+        });
 
-        piecepreview.setBackground(new java.awt.Color(200, 200, 200));
-        piecepreview.setPreferredSize(new java.awt.Dimension(240, 240));
+        dropbutton.setText("drop");
+        dropbutton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                dropbuttonActionPerformed(evt);
+            }
+        });
 
-        javax.swing.GroupLayout piecepreviewLayout = new javax.swing.GroupLayout(piecepreview);
-        piecepreview.setLayout(piecepreviewLayout);
-        piecepreviewLayout.setHorizontalGroup(
-            piecepreviewLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+        newpiecebutton.setText("new piece");
+        newpiecebutton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                newpiecebuttonActionPerformed(evt);
+            }
+        });
+
+        nextpanel.setBackground(new java.awt.Color(0, 0, 0));
+
+        javax.swing.GroupLayout nextpanelLayout = new javax.swing.GroupLayout(nextpanel);
+        nextpanel.setLayout(nextpanelLayout);
+        nextpanelLayout.setHorizontalGroup(
+            nextpanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGap(0, 240, Short.MAX_VALUE)
         );
-        piecepreviewLayout.setVerticalGroup(
-            piecepreviewLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+        nextpanelLayout.setVerticalGroup(
+            nextpanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGap(0, 240, Short.MAX_VALUE)
         );
-
-        scorelabel.setFont(new java.awt.Font("Tahoma", 0, 24)); // NOI18N
-        scorelabel.setText("Score: 0");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(50, 50, 50)
+                .addContainerGap()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(playfield, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(tetrislabel, javax.swing.GroupLayout.DEFAULT_SIZE, 600, Short.MAX_VALUE))
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(titlelabel, javax.swing.GroupLayout.PREFERRED_SIZE, 600, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(playfield, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(50, 50, 50)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(piecepreview, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(nextlabel, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(scorelabel)
-                    .addComponent(highscorelabel)
-                    .addComponent(playbutton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(newgamebutton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(246, Short.MAX_VALUE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createSequentialGroup()
+                                .addGap(91, 91, 91)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addComponent(leftbutton)
+                                        .addGap(108, 108, 108)
+                                        .addComponent(rightbutton))
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addGap(67, 67, 67)
+                                        .addComponent(rotatebutton))
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addGap(70, 70, 70)
+                                        .addComponent(dropbutton))))
+                            .addGroup(layout.createSequentialGroup()
+                                .addGap(64, 64, 64)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                    .addComponent(nextpanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(newgamebutton, javax.swing.GroupLayout.PREFERRED_SIZE, 227, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(96, 96, 96)
+                        .addComponent(scorelabel)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 260, Short.MAX_VALUE)
+                        .addComponent(newpiecebutton)
+                        .addGap(94, 94, 94))))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(titlelabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(newgamebutton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 112, Short.MAX_VALUE)))
-                .addGap(18, 18, 18)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(tetrislabel, javax.swing.GroupLayout.PREFERRED_SIZE, 137, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(newgamebutton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(0, 0, Short.MAX_VALUE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(scorelabel)
+                    .addComponent(newpiecebutton))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(playfield, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(playbutton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(71, 71, 71)
-                        .addComponent(nextlabel, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(piecepreview, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(nextpanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(66, 66, 66)
+                        .addComponent(rotatebutton)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(scorelabel)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(highscorelabel)))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(leftbutton)
+                            .addComponent(rightbutton))
+                        .addGap(18, 18, 18)
+                        .addComponent(dropbutton)))
                 .addContainerGap())
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void newgamebuttonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_newgamebuttonActionPerformed
+        // TODO add your handling code here:
+        field = new Field(10, 20, scale);
+    }//GEN-LAST:event_newgamebuttonActionPerformed
+
+    private void rotatebuttonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rotatebuttonActionPerformed
+        // TODO add your handling code here:
+        currentpiece.Rotate(currentpiece);
+    }//GEN-LAST:event_rotatebuttonActionPerformed
+
+    private void rightbuttonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rightbuttonActionPerformed
+        // TODO add your handling code here:
+        currentpiece.MoveRight(field);
+    }//GEN-LAST:event_rightbuttonActionPerformed
+
+    private void leftbuttonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_leftbuttonActionPerformed
+        // TODO add your handling code here:
+        currentpiece.MoveLeft(field);
+    }//GEN-LAST:event_leftbuttonActionPerformed
+
+    private void dropbuttonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_dropbuttonActionPerformed
+        // TODO add your handling code here:
+        currentpiece.fall(field);
+    }//GEN-LAST:event_dropbuttonActionPerformed
+
+    private void newpiecebuttonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_newpiecebuttonActionPerformed
+        // TODO add your handling code here:
+        
+    }//GEN-LAST:event_newpiecebuttonActionPerformed
 
     /**
      * @param args the command line arguments
@@ -219,7 +321,6 @@ public class Main extends javax.swing.JFrame {
             java.util.logging.Logger.getLogger(Main.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
-        //</editor-fold>
 
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
@@ -230,13 +331,15 @@ public class Main extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JLabel highscorelabel;
-    private javax.swing.JButton newgamebutton;
-    private javax.swing.JLabel nextlabel;
-    private javax.swing.JPanel piecepreview;
-    private javax.swing.JButton playbutton;
+    private javax.swing.JButton dropbutton;
+    private javax.swing.JButton leftbutton;
+    private java.awt.Button newgamebutton;
+    private javax.swing.JButton newpiecebutton;
+    private javax.swing.JPanel nextpanel;
     private javax.swing.JPanel playfield;
+    private javax.swing.JButton rightbutton;
+    private javax.swing.JButton rotatebutton;
     private javax.swing.JLabel scorelabel;
-    private javax.swing.JLabel titlelabel;
+    private javax.swing.JLabel tetrislabel;
     // End of variables declaration//GEN-END:variables
 }
