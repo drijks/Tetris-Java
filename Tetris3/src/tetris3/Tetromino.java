@@ -21,7 +21,9 @@ public class Tetromino {
     public int y;
     public int scale;
     public Color c;
-    public Color[] colors = {Color.BLACK, Color.RED, Color.ORANGE, Color.YELLOW, Color.PINK, Color.GREEN, Color.BLUE, Color.MAGENTA};
+    public Color[] colors = {Color.BLACK, new Color(75, 0, 130), new Color(255, 105, 180), new Color(255, 153, 255), new Color(153, 204, 255), new Color(153, 153, 255), Color.BLUE, Color.MAGENTA};
+
+//    public Color[] colors = {Color.BLACK, Color.RED, Color.ORANGE, Color.YELLOW, Color.PINK, Color.GREEN, Color.BLUE, Color.MAGENTA};
 
     public Tetromino(String type, int x, int y, int scale) {
         this.type = type;

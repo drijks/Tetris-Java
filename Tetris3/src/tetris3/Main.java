@@ -28,10 +28,14 @@ public class Main extends javax.swing.JFrame implements KeyListener {
     public int scale = 60;
     public int currentscore = 0;
     public String piecetypes = "OLJITSZ";
-    public Color[] colors = {Color.BLACK, Color.RED, Color.ORANGE, Color.YELLOW, Color.PINK, Color.GREEN, Color.BLUE, Color.MAGENTA};
+    public Color[] colors = {Color.BLACK, new Color(75, 0, 130), new Color(255, 105, 180), new Color(255, 153, 255), new Color(153, 204, 255), new Color(153, 153, 255), Color.BLUE, Color.MAGENTA};
+
+//    public Color[] colors = {Color.BLACK, Color.RED, Color.ORANGE, Color.YELLOW, Color.PINK, Color.GREEN, Color.BLUE, Color.MAGENTA};
     public int ticks = 0;
     public Tetromino currentpiece = new Tetromino(randomPiece(piecetypes), 4, 0, scale);
     public Tetromino nextpiece = new Tetromino(randomPiece(piecetypes), 4, 0, scale);
+
+    public boolean gamerunning = false;
 
     public Timer clock = new Timer(100, new ActionListener() {
 
@@ -50,20 +54,27 @@ public class Main extends javax.swing.JFrame implements KeyListener {
 
     @Override
     public void keyPressed(java.awt.event.KeyEvent ke) {
-        switch (ke.getKeyCode()) {
-            case KeyEvent.VK_UP:
-                currentpiece.Rotate(currentpiece, field);
-                break;
-            case KeyEvent.VK_DOWN:
-                currentpiece.fall(field);
-                break;
-            case KeyEvent.VK_LEFT:
-                currentpiece.MoveLeft(field);
-                break;
-            case KeyEvent.VK_RIGHT:
-                currentpiece.MoveRight(field);
-                break;
-        }
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+
+//        if (gamerunning) {
+//            switch (ke.getKeyCode()) {
+//                case KeyEvent.VK_UP:
+//                    currentpiece.Rotate(currentpiece, field);
+//                    break;
+//                case KeyEvent.VK_DOWN:
+//                    if (ticks % 10 != 0) {
+//                        currentpiece.fall(field);
+//                        ticks = 0;
+//                    }
+//                    break;
+//                case KeyEvent.VK_LEFT:
+//                    currentpiece.MoveLeft(field);
+//                    break;
+//                case KeyEvent.VK_RIGHT:
+//                    currentpiece.MoveRight(field);
+//                    break;
+//            }
+//        }
     }
 
     @Override
@@ -91,20 +102,26 @@ public class Main extends javax.swing.JFrame implements KeyListener {
     }
 
     public void tick() {
-        ticks += 1;
-        currentscore = field.score;
-        counter(scorelabel);
+        if (gamerunning) {
+            ticks += 1;
+            currentscore = field.score;
+            counter(scorelabel);
 
-        if (ticks % 20 == 0) {
-            currentpiece.fall(field);
-        }
-        if (currentpiece.CheckCollision(field)) {
-            merge(currentpiece, field);
-            currentpiece = nextpiece;
-            nextpiece = new Tetromino(randomPiece(piecetypes), 4, 0, scale);
+            if (currentpiece.CheckCollision(field)) {
+                if (currentpiece.y == 0) {
+                    gamerunning = false;
+                    gameoverlabel.setVisible(true);
+                }
+                merge(currentpiece, field);
+                currentpiece = nextpiece;
+                nextpiece = new Tetromino(randomPiece(piecetypes), 4, 0, scale);
 
+            }
+            if (ticks % 10 == 0) {
+                currentpiece.fall(field);
+            }
+            field.checkAL(field.matrix);
         }
-        field.checkAL(field.matrix);
 
     }
 
@@ -151,6 +168,8 @@ public class Main extends javax.swing.JFrame implements KeyListener {
         newgamebutton = new java.awt.Button();
         scorelabel = new javax.swing.JLabel();
         nextpanel = new MyPanel2();
+        pausebutton = new javax.swing.JButton();
+        gameoverlabel = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         addKeyListener(new java.awt.event.KeyAdapter() {
@@ -195,18 +214,38 @@ public class Main extends javax.swing.JFrame implements KeyListener {
             }
         });
 
+        scorelabel.setFont(new java.awt.Font("Tahoma", 0, 36)); // NOI18N
+        scorelabel.setText("score: ");
+
         nextpanel.setBackground(new java.awt.Color(0, 0, 0));
 
         javax.swing.GroupLayout nextpanelLayout = new javax.swing.GroupLayout(nextpanel);
         nextpanel.setLayout(nextpanelLayout);
         nextpanelLayout.setHorizontalGroup(
             nextpanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 240, Short.MAX_VALUE)
+            .addGap(0, 0, Short.MAX_VALUE)
         );
         nextpanelLayout.setVerticalGroup(
             nextpanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGap(0, 240, Short.MAX_VALUE)
         );
+
+        pausebutton.setFont(new java.awt.Font("Tahoma", 0, 36)); // NOI18N
+        pausebutton.setText("play/pause");
+        pausebutton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                pausebuttonActionPerformed(evt);
+            }
+        });
+        pausebutton.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                pausebuttonKeyPressed(evt);
+            }
+        });
+
+        gameoverlabel.setFont(new java.awt.Font("Tahoma", 0, 80)); // NOI18N
+        gameoverlabel.setForeground(new java.awt.Color(255, 0, 0));
+        gameoverlabel.setText("GAME OVER");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -219,15 +258,19 @@ public class Main extends javax.swing.JFrame implements KeyListener {
                     .addComponent(tetrislabel, javax.swing.GroupLayout.DEFAULT_SIZE, 600, Short.MAX_VALUE))
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(64, 64, 64)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(nextpanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(newgamebutton, javax.swing.GroupLayout.PREFERRED_SIZE, 227, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addContainerGap(275, Short.MAX_VALUE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(gameoverlabel))
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(96, 96, 96)
-                        .addComponent(scorelabel)
-                        .addGap(94, 483, Short.MAX_VALUE))))
+                        .addGap(64, 64, 64)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                            .addComponent(pausebutton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(nextpanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                                .addGap(13, 13, 13)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(scorelabel)
+                                    .addComponent(newgamebutton, javax.swing.GroupLayout.PREFERRED_SIZE, 227, javax.swing.GroupLayout.PREFERRED_SIZE))))))
+                .addContainerGap(134, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -236,12 +279,20 @@ public class Main extends javax.swing.JFrame implements KeyListener {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(tetrislabel, javax.swing.GroupLayout.PREFERRED_SIZE, 137, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(newgamebutton, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(0, 35, Short.MAX_VALUE)
-                .addComponent(scorelabel)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(playfield, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(nextpanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 47, Short.MAX_VALUE)
+                        .addComponent(playfield, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(37, 37, 37)
+                        .addComponent(scorelabel)
+                        .addGap(34, 34, 34)
+                        .addComponent(nextpanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(42, 42, 42)
+                        .addComponent(pausebutton, javax.swing.GroupLayout.PREFERRED_SIZE, 119, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(32, 32, 32)
+                        .addComponent(gameoverlabel)
+                        .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
 
@@ -250,62 +301,106 @@ public class Main extends javax.swing.JFrame implements KeyListener {
 
     private void newgamebuttonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_newgamebuttonActionPerformed
         // TODO add your handling code here:
+        currentscore = 0;
         field = new Field(10, 20, scale, currentscore);
+        currentpiece = new Tetromino(randomPiece(piecetypes), 4, 0, scale);
+        nextpiece = new Tetromino(randomPiece(piecetypes), 4, 0, scale);
+        gamerunning = true;
+        gameoverlabel.setVisible(false);
     }//GEN-LAST:event_newgamebuttonActionPerformed
 
     private void formKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_formKeyPressed
         // TODO add your handling code here:
-        switch (evt.getKeyCode()) {
-            case KeyEvent.VK_UP:
-                currentpiece.Rotate(currentpiece, field);
-                break;
-            case KeyEvent.VK_DOWN:
-                currentpiece.fall(field);
-                break;
-            case KeyEvent.VK_LEFT:
-                currentpiece.MoveLeft(field);
-                break;
-            case KeyEvent.VK_RIGHT:
-                currentpiece.MoveRight(field);
-                break;
+        if (gamerunning) {
+            switch (evt.getKeyCode()) {
+                case KeyEvent.VK_UP:
+                    currentpiece.Rotate(currentpiece, field);
+                    break;
+                case KeyEvent.VK_DOWN:
+                    if (ticks % 10 != 0) {
+                        currentpiece.fall(field);
+                    }
+                    break;
+                case KeyEvent.VK_LEFT:
+                    currentpiece.MoveLeft(field);
+                    break;
+                case KeyEvent.VK_RIGHT:
+                    currentpiece.MoveRight(field);
+                    break;
+            }
         }
     }//GEN-LAST:event_formKeyPressed
 
     private void playfieldKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_playfieldKeyPressed
         // TODO add your handling code here:
-        switch (evt.getKeyCode()) {
-            case KeyEvent.VK_UP:
-                currentpiece.Rotate(currentpiece, field);
-                break;
-            case KeyEvent.VK_DOWN:
-                currentpiece.fall(field);
-                break;
-            case KeyEvent.VK_LEFT:
-                currentpiece.MoveLeft(field);
-                break;
-            case KeyEvent.VK_RIGHT:
-                currentpiece.MoveRight(field);
-                break;
+        if (gamerunning) {
+            switch (evt.getKeyCode()) {
+                case KeyEvent.VK_UP:
+                    currentpiece.Rotate(currentpiece, field);
+                    break;
+                case KeyEvent.VK_DOWN:
+                    if (ticks % 10 != 0) {
+                        currentpiece.fall(field);
+                    }
+                    break;
+                case KeyEvent.VK_LEFT:
+                    currentpiece.MoveLeft(field);
+                    break;
+                case KeyEvent.VK_RIGHT:
+                    currentpiece.MoveRight(field);
+                    break;
+            }
         }
     }//GEN-LAST:event_playfieldKeyPressed
 
     private void newgamebuttonKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_newgamebuttonKeyPressed
         // TODO add your handling code here:
-        switch (evt.getKeyCode()) {
-            case KeyEvent.VK_UP:
-                currentpiece.Rotate(currentpiece, field);
-                break;
-            case KeyEvent.VK_DOWN:
-                currentpiece.fall(field);
-                break;
-            case KeyEvent.VK_LEFT:
-                currentpiece.MoveLeft(field);
-                break;
-            case KeyEvent.VK_RIGHT:
-                currentpiece.MoveRight(field);
-                break;
+        if (gamerunning) {
+            switch (evt.getKeyCode()) {
+                case KeyEvent.VK_UP:
+                    currentpiece.Rotate(currentpiece, field);
+                    break;
+                case KeyEvent.VK_DOWN:
+                    if (ticks % 10 != 0) {
+                        currentpiece.fall(field);
+                    }
+                    break;
+                case KeyEvent.VK_LEFT:
+                    currentpiece.MoveLeft(field);
+                    break;
+                case KeyEvent.VK_RIGHT:
+                    currentpiece.MoveRight(field);
+                    break;
+            }
         }
     }//GEN-LAST:event_newgamebuttonKeyPressed
+
+    private void pausebuttonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pausebuttonActionPerformed
+        // TODO add your handling code here:
+        gamerunning = !gamerunning;
+    }//GEN-LAST:event_pausebuttonActionPerformed
+
+    private void pausebuttonKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_pausebuttonKeyPressed
+        // TODO add your handling code here:
+        if (gamerunning) {
+            switch (evt.getKeyCode()) {
+                case KeyEvent.VK_UP:
+                    currentpiece.Rotate(currentpiece, field);
+                    break;
+                case KeyEvent.VK_DOWN:
+                    if (ticks % 10 != 0) {
+                        currentpiece.fall(field);
+                    }
+                    break;
+                case KeyEvent.VK_LEFT:
+                    currentpiece.MoveLeft(field);
+                    break;
+                case KeyEvent.VK_RIGHT:
+                    currentpiece.MoveRight(field);
+                    break;
+            }
+        }
+    }//GEN-LAST:event_pausebuttonKeyPressed
 
     /**
      * @param args the command line arguments
@@ -343,8 +438,10 @@ public class Main extends javax.swing.JFrame implements KeyListener {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JLabel gameoverlabel;
     private java.awt.Button newgamebutton;
     private javax.swing.JPanel nextpanel;
+    private javax.swing.JButton pausebutton;
     private javax.swing.JPanel playfield;
     private javax.swing.JLabel scorelabel;
     private javax.swing.JLabel tetrislabel;

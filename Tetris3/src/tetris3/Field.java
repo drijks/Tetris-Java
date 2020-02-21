@@ -22,8 +22,9 @@ public class Field {
     public static int score;
     public ArrayList<int[]> matrix;
     public Random r = new Random();
-    public Color[] colors = {Color.BLACK, Color.RED, Color.ORANGE, Color.YELLOW, Color.PINK, Color.GREEN, Color.BLUE, Color.MAGENTA};
+    public Color[] colors = {Color.BLACK, new Color(75, 0, 130), new Color(255, 105, 180), new Color(255, 153, 255), new Color(153, 204, 255), new Color(153, 153, 255), Color.BLUE, Color.MAGENTA, Color.GRAY};
 
+//    public Color[] colors = {Color.BLACK, Color.RED, Color.ORANGE, Color.YELLOW, Color.PINK, Color.GREEN, Color.BLUE, Color.MAGENTA, Color.GRAY};
     public Field(int x, int y, int scale, int score) {
         this.x = x;
         this.y = y;
@@ -38,9 +39,12 @@ public class Field {
         for (int i = 0; i < y; i++) {
             int[] temp = new int[x];
             for (int j = 0; j < x; j++) {
-                temp[j] = r.nextInt(8);
-                if (i < 7) {
-                    temp[j] = 0;
+//                temp[j] = r.nextInt(8);
+//                if (i < 10) {
+//                    temp[j] = 0;
+//                }
+                if (i == y - 1) {
+                    temp[j] = 8;
                 }
             }
             newfield.add(temp);
@@ -51,10 +55,9 @@ public class Field {
     public static void checkAL(ArrayList<int[]> al) {
         int nonzeroes = 0;
         int deletedrows = 0;
-        int x = al.size();
         int y = al.get(0).length;
         ArrayList<int[]> temp = al;
-        for (int i = al.size() - 1; i >= 0; i--) {
+        for (int i = al.size() - 2; i >= 0; i--) {
             nonzeroes = 0;
             for (int j = 0; j < al.get(i).length; j++) {
                 if (al.get(i)[j] == 0) {
@@ -73,28 +76,25 @@ public class Field {
         al = temp;
         score += scoreMultiplier(deletedrows);
     }
-    
+
     public static int scoreMultiplier(int rows) {
         if (rows == 1) {
             return 100;
-        }
-        else if (rows == 2) {
-            return 300; 
-        }
-        else if (rows == 3) {
+        } else if (rows == 2) {
+            return 300;
+        } else if (rows == 3) {
             return 500;
-        }
-        else if (rows == 4) {
+        } else if (rows == 4) {
             return 800;
         }
         return 0;
     }
-    
-        public void paintField(Graphics g) {
+
+    public void paintField(Graphics g) {
         for (int i = 0; i < matrix.size(); i++) {
             for (int j = 0; j < matrix.get(i).length; j++) {
                 g.setColor(colors[matrix.get(i)[j]]);
-                g.fillRect(j*scale, i*scale, scale, scale);
+                g.fillRect(j * scale, i * scale, scale, scale);
             }
         }
     }
